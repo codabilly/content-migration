@@ -1,0 +1,22 @@
+---
+# tasks file for tower_process_job_template
+- name: Step 1 - Getting data for job template "{{ template_name }}"
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/job_templates/?name={{ template_name | urlencode }}"
+    return_content: yes
+  register: job_templates
+
+- name: Step 2 - Iterating over results to set value for proj_obj variable
+  set_fact:
+    jt_obj: "{{ jt }}"
+  when: jt.name == template_name and jt.project == proj_obj.id
+  loop: "{{ job_templates.json.results }}"
+  loop_control:
+    loop_var: jt
+
+- name: Present value assigned to jt_obj
+  debug: var=jt_obj

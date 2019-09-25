@@ -1,0 +1,38 @@
+---
+# tasks file for tower_find_scm_credential
+- name: Getting list of credentials
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/credentials/?name={{ proj_scm_cred_name | urlencode }}"
+    return_content: yes
+  register: Resposnse_credentials
+
+- name: Iterate over list and find requested ID
+  set_fact:
+    scm_cred_obj: "{{ cred }}"
+  when: cred.name == proj_scm_cred_name and cred.credential_type == 2 and cred.organization == organization.id
+  loop: "{{ Resposnse_credentials.json.results }}"
+  loop_control:
+    loop_var: cred
+
+- name: Validation step - Was the key found
+  debug:
+    msg:
+      - Keys found "{{ Resposnse_credentials.json.count }}"
+
+- name: Validation step - Is the key owned by the organization
+  debug:
+    msg:
+      - Credential "{{ proj_scm_cred_name }}" is owned by organization "{{ cred.organization == organization.id }}"
+  when: scm_cred_obj is defined
+
+- name: Control step to make sure the id was found
+  fail:
+    msg: There was an error with the SCM credential, please review the validation steps above.
+  when: scm_cred_obj is undefined
+
+- name: Present matched credential
+  debug: var=scm_cred_obj

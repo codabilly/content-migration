@@ -1,0 +1,15 @@
+---
+# tasks file for tower_generate_key_pair
+
+- name: Generating key ssh key pairs
+  delegate_to: localhost
+  command: ssh-keygen -t rsa -f ./amg-key -N ""
+  register: key-creation.txt
+
+- name: Store private key
+  set_fact:
+    private_key: "{{ lookup('file', 'amg-key') }}"
+
+- name: Store private key
+  set_fact:
+    public_key: "{{ lookup('file', 'amg-key.pub') }}"

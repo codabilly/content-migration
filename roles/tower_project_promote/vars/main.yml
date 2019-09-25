@@ -1,0 +1,14 @@
+---
+# vars file for tower_project_promote
+payload_project:
+  credential: "{{ proj_scm_cred }}"
+  description: "{{ proj_desc }}"
+  scm_update_cache_timeout: "{{ proj_scm_cache_to }}"
+  scm_update_on_launch: "{{ proj_scm_update_on_launch }}"
+  scm_clean: "{{ proj_scm_clean }}"
+  scm_type: "{{ proj_scm_type }}"
+  scm_delete_on_update: "{{ proj_scm_delete_on_update }}"
+  scm_branch: "{{ proj_scm_release }}"
+  scm_url: "{{ proj_scm_url }}"
+  timeout: "{{ proj_timeout }}"
+  name: "{{ proj_name }}"

@@ -1,0 +1,22 @@
+---
+# tasks file for github_push_pub_key
+- name: Registering public key with github server
+  vars:
+    # auth: "{{ auth }}"
+    # target: "{{ target }}"
+    payload_pub_key:
+      title: "{{ key_name }}"
+      read_only: true
+      key: "{{ public_key }}"
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ git_auth }}"
+    status_code: 201
+    url: "{{ target }}/repos/{{ git_account }}/{{ git_repo }}/keys"
+    body_format: json
+    body: "{{ payload_pub_key }}"
+    return_content: yes
+  register: git_key_res
+
+- debug: var=git_key_res

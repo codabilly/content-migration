@@ -1,0 +1,19 @@
+---
+# tasks file for tower_find_invetory
+- name: find declared inventory
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/inventories/?name={{ inv_name  | urlencode }}"
+    return_content: yes
+  register: inv_qry_res
+
+- name: Setting reference to inventory as it was found
+  set_fact:
+    inv_obj: "{{ inv_qry_res.json.results[0] }}"
+  when: inv_qry_res.json.count == 1
+
+- debug: var=inv_obj
+  when: inv_obj is defined

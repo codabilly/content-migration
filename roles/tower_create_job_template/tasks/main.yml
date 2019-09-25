@@ -1,0 +1,48 @@
+---
+# tasks file for tower_create_job_template
+- name: Querying target server for similarly name job template
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/job_templates/?name={{ jt_obj.name | urlencode }}"
+    return_content: yes
+  register: qry_job_template_res
+
+- name: Destroying target job template
+  uri:
+    method: DELETE
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 204
+    url: "{{ target }}/api/v2/job_templates/{{ qry_job_template_res.json.results[0].id }}/"
+  when: qry_job_template_res.json.count > 0
+        and qry_job_template_res.json.results[0].name == jt_obj.name
+        and qry_job_template_res.json.results[0].project == target_proj_obj.id
+
+- name: Step 1 - Pausing to allow the sync of the repo to happen
+  pause:
+    seconds: 20
+
+- name: creating job template "{{ jt_obj.name }}"
+  vars:
+    payload_job_template:
+      description: "{{ jt_obj.description }}"
+      project: "{{ target_proj_obj.id }}"
+      playbook: "{{ jt_obj.playbook }}"
+      inventory: "{{ inv_obj.id }}"
+      name: "{{ jt_obj.name }}"
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 201
+    url: "{{ target }}/api/v2/job_templates/"
+    body_format: json
+    body: "{{ payload_job_template }}"
+    return_content: yes
+  register: res_job_template
+
+- name: return the job templete info
+  debug: var=res_job_template.json

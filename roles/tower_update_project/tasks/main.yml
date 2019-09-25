@@ -1,0 +1,21 @@
+---
+# tasks file for tower_update_project
+- name: Updating project "{{ proj_obj.name }}"
+  uri:
+    method: PUT
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/projects/{{ proj_obj.id }}/"
+    body_format: json
+    body: "{{ payload_project }}"
+    return_content: yes
+  register: project
+
+- name: Present Result
+  debug:
+    msg: "{{ project.json }}"
+
+- name: Updting proj_obj reference to reflect updated values
+  set_fact:
+    proj_obj: "{{ project.json }}"

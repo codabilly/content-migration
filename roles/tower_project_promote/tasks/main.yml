@@ -1,0 +1,88 @@
+---
+# tasks file for tower_project_promote
+- name: Querying target server for similarly name project
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/projects/?name={{ promotion_content.name | urlencode }}"
+    return_content: yes
+  register: qry_proj_res
+
+- name: Determining if project will be updated or created
+  set_fact:
+    proj_exists: "{{ qry_proj_res.json.results[0].name == promotion_content.name and qry_proj_res.json.results[0].organization == organization.id }}"
+  when: qry_proj_res.json.count > 0
+
+- name: Creating project
+  vars:
+    proj_scm_cred: ''
+    proj_scm_cred_name: ''
+    proj_desc: "{{ promotion_content.description }}"
+    proj_scm_cache_to: "{{ promotion_content.scm_update_cache_timeout }}"
+    proj_scm_update_on_launch: "{{ promotion_content.scm_update_on_launch }}"
+    proj_scm_clean: "{{ promotion_content.scm_clean }}"
+    proj_scm_type: "{{ promotion_content.scm_type }}"
+    proj_scm_delete_on_update: "{{ promotion_content.scm_delete_on_update }}"
+    proj_scm_url: "{{ promotion_content.scm_url }}"
+    proj_scm_release: "{{ promotion_content.scm_branch }}"
+    proj_timeout: "{{ promotion_content.timeout }}"
+    proj_name: "{{ promotion_content.name }}"
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 201
+    url: "{{ target }}/api/v2/organizations/{{ organization.id }}/projects/"
+    body_format: json
+    body: "{{ payload_project }}"
+    return_content: yes
+  # register: target_proj_obj
+  when: proj_exists is undefined
+
+- name: updating project
+  vars:
+    proj_scm_cred: "{{ qry_proj_res.json.results[0].credential }}"
+    proj_scm_cred_name: ''
+    proj_desc: "{{ promotion_content.description }}"
+    proj_scm_cache_to: "{{ promotion_content.scm_update_cache_timeout }}"
+    proj_scm_update_on_launch: "{{ promotion_content.scm_update_on_launch }}"
+    proj_scm_clean: "{{ promotion_content.scm_clean }}"
+    proj_scm_type: "{{ promotion_content.scm_type }}"
+    proj_scm_delete_on_update: "{{ promotion_content.scm_delete_on_update }}"
+    proj_scm_url: "{{ promotion_content.scm_url }}"
+    proj_scm_release: "{{ promotion_content.scm_branch }}"
+    proj_timeout: "{{ promotion_content.timeout }}"
+    proj_name: "{{ promotion_content.name }}"
+  uri:
+    method: PUT
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/projects/{{ qry_proj_res.json.results[0].id }}/"
+    body_format: json
+    body: "{{ payload_project }}"
+    return_content: yes
+  # register: target_proj_obj
+  when: proj_exists is defined
+
+- name: Updating project references
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/projects/?name={{ promotion_content.name | urlencode }}"
+    return_content: yes
+  register: qry_proj_res
+
+# - debug: var=qry_proj_res
+
+- name: Setting object reference to target_proj_obj
+  set_fact:
+    target_proj_obj: "{{ qry_proj_res.json.results[0] }}"
+
+- name: Setitng trigger to auto load scm key
+  set_fact:
+      new_project: proj_exists is undefined

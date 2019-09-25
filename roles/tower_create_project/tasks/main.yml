@@ -1,0 +1,21 @@
+---
+# tasks file for tower_create_project
+- name: Create Project
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 201
+    url: "{{ target }}/api/v2/organizations/{{ organization.id }}/projects/"
+    body_format: json
+    body: "{{ payload_project }}"
+    return_content: yes
+  register: project
+
+- name: Present Result
+  debug:
+    msg: "{{ project.json }}"
+
+- name: Updting proj_obj reference to reflect new values
+  set_fact:
+    proj_obj: "{{ project.json }}"

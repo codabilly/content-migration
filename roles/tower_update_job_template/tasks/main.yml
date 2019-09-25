@@ -1,0 +1,53 @@
+---
+# tasks file for update_job_template
+- name: Step 1 - Pausing to allow the sync of the repo to happen
+  pause:
+    seconds: 20
+
+- name: Update Job Template
+  uri:
+    method: PATCH
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}{{ tmpl_endpoint }}{{ jt_obj.id }}/"
+    body_format: json
+    body: "{{ payload_job_template }}"
+    return_content: yes
+  register: res_job_template_patch
+
+- name: return the job templete info
+  debug: var=res_job_template_patch
+
+- name: update credential on job template by removnig existing credential
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 204
+    url: "{{ target }}{{ tmpl_endpoint }}{{ jt_obj.id }}/credentials/"
+    body_format: json
+    body: '{ "id": {{ c.id }}, "disassociate": "True" }' #Due to jinja's behaviour of returning strings and a bug in Tower RWS API the body payload has to be build like this.
+    return_content: yes
+  loop: "{{ jt_obj.summary_fields.credentials }}"
+  loop_control:
+    loop_var: c
+  register: cred_body
+
+- name: Show response of credential remove reqeust
+  debug: var=cred_body
+
+- name: update credential on job template
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 204
+    url: "{{ target }}{{ tmpl_endpoint }}{{ jt_obj.id }}/credentials/"
+    body_format: json
+    body: '{ "id": {{ cred_obj.id }} }' #Due to jinja's behaviour of returning strings and a bug in Tower RWS API the body payload has to be build like this.
+    return_content: yes
+  register: res_job_template_cred
+
+- name: echo response
+  debug: var=res_job_template_cred

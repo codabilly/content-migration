@@ -1,0 +1,115 @@
+---
+
+- name: Tower to Tower content promotion playbook
+  hosts: localhost
+  vars:
+    #source
+    org_name: DDS
+    server_source: http://localhost
+    token_source: Bearer Cz1fAlKWwH2XXJBCXBlzuqS52ZQETk
+    server_target: http://porky
+    token_target: Bearer 9O6dfW3uVDPJxjNsPIV9FM6GvLJMLW
+    workspace: "/tmp/promotion"
+    #inventory
+    inventory_repo: https://github.com/codabilly/inventories.git
+    inventory_version: master
+    inv_file: inventory_promoted.yml
+    inv_name: nginx
+    inv_desc: Automagically created inventory
+    inv_exists: True # values: True | False
+    #content to promote
+    projects: RemoteLaunch #remember to change variable name to singular
+    template_name: Remote
+
+    git_token: token 84fa610e5e93a922aacf3ae25052ba70ac24c7d0
+    git_target: https://api.github.com
+    git_user: codabilly
+    git_repo_: towerRWS
+
+  roles:
+  # source server
+    - role: tower_validate_org
+      vars:
+        - auth: "{{ token_source }}"
+        - target: "{{ server_source }}"
+
+    - role: tower_gather_projects
+      vars:
+        - auth: "{{ token_source }}"
+        - target: "{{ server_source }}"
+
+    - role: tower_process_job_template
+      vars:
+        - auth: "{{ token_source }}"
+        - target: "{{ server_source }}"
+        - proj_obj: "{{ promotion_content }}"
+
+# target server
+    - role: tower_validate_org
+      vars:
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+
+    - role: tower_find_inventory
+      vars:
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+
+    - role: tower_pull_inventory
+      vars:
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+        - repo_endpoint: "{{ inventory_repo }}"
+      when: not inv_exists and inv_obj is undefined
+
+    - role: tower_load_inventory_file
+      when: not inv_exists and inv_obj is undefined
+
+    - role: tower_create_inventory
+      vars:
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+      when: not inv_exists and inv_obj is undefined
+
+    - role: tower_populate_inventory_with_hosts
+      vars:
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+      when: (not inv_exists) and (inv_obj is defined)
+
+    - role: tower_project_promote
+      vars:
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+
+    - role: tower_generate_key_pair
+      when: new_project
+
+    - role: tower_push_pri_key
+      vars:
+        - scm_cred_name: "{{ organization.name }}-{{ 100000 | random}}"
+        - org_id: "{{ organization.id }}"
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+      when: new_project
+
+    - role: tower_assign_scm_cred_to_project
+      vars:
+        # - org_id: "{{ organization.id }}"
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"
+      when: new_project
+
+    - role: github_push_pub_key
+      vars:
+        - key_name: "{{ scm_cred_name }}"
+        - git_auth: "{{ git_token }}"
+        - target: "{{ git_target }}"
+        - git_account: "{{ git_user }}"
+        - git_repo: "{{ git_repo_ }}"
+      when: new_project
+
+    - role: tower_create_job_template
+      vars:
+        - auth: "{{ token_target }}"
+        - target: "{{ server_target }}"

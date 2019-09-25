@@ -1,0 +1,14 @@
+---
+# tasks file for tower_load_inventory_file
+- name: tower_load_inventory_file
+  delegate_to: localhost
+  include_vars:
+    file: "{{ workspace }}/{{ inv_file }}"
+    name: inv_hosts_lst
+
+- name: Building the hosts list for the inventory
+  set_fact:
+    inv_hosts: "{{ inv_hosts | default([]) + [host] }}"
+  loop: "{{ inv_hosts_lst[inv_name] }}"
+  loop_control:
+    loop_var: host

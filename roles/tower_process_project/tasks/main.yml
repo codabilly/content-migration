@@ -1,0 +1,27 @@
+---
+# tasks file for tower_process_project
+# this role will try to determine if the project name already exist for the
+# given organization. If it does it will populate the proj_obj which will be
+# subsequent tast
+
+- name: Getting list of projects for "{{ org_name }}"
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/organizations/{{ organization.id }}/projects/?name={{ proj_name | urlencode }}"
+    return_content: yes
+  register: project
+
+- name: Set has_projects value based on outcome of previous search
+  set_fact:
+    has_projects: "{{ project.json.count > 0 }}"
+
+- name: scan list to find matches
+  set_fact:
+    proj_obj: "{{ p }}"
+  when: has_projects and proj_name == p.name
+  loop: "{{ project.json.results }}"
+  loop_control:
+    loop_var: p

@@ -1,0 +1,25 @@
+---
+# tasks file for tower_create_inventory
+- name: Creating inventory "{{ inv_name }}"
+  vars:
+    payload_inventory:
+      name: "{{ inv_name }}"
+      organization: "{{ organization.id }}"
+      description: "{{ inv_desc }}"
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 201
+    url: "{{ target }}/api/v2/inventories/"
+    body_format: json
+    body: "{{ payload_inventory }}"
+    return_content: yes
+  register: inv_response
+
+- name: Setting response to inv_obeject
+  set_fact:
+    inv_obj: "{{ inv_response.json }}"
+
+- name: Return Inventory Creation results
+  debug: var=inv_obj

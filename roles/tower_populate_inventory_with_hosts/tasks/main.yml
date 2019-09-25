@@ -1,0 +1,16 @@
+---
+# tasks file for tower_populate_inventory_with_hosts
+- name: step 1 - Iterating over defined hosts to be added
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 201
+    url: "{{ target }}/api/v2/inventories/{{ inv_obj.id }}/hosts/"
+    body_format: json
+    body: "{{ host }}"
+    return_content: yes
+  loop: "{{ inv_hosts }}"
+  loop_control:
+    loop_var: host
+  register: hosts_added

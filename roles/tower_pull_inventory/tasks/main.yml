@@ -1,0 +1,17 @@
+---
+# tasks file for tower_pull_inventory
+- name: Weird workaround for Ansible's inefficient method of constantly evaluating global scope variables
+  vars:
+    rand: "{{ ansible_date_time.year | int }}{{ ansible_date_time.month | int }}{{ ansible_date_time.day | int }}-{{ 100000 | random }}-{{ 100000 | random }}"
+  set_fact:
+    workspace: "{{ workspace }}/{{ rand }}"
+
+- name: tower_pull_inventory
+  delegate_to: localhost
+  git:
+    repo: "{{ repo_endpoint }}"
+    dest: "{{ workspace }}"
+    version: "{{ inventory_version }}"
+
+- debug:
+    msg: "Session workspace location: {{ workspace }}"

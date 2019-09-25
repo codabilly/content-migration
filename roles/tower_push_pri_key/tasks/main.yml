@@ -1,0 +1,34 @@
+---
+# tasks file for tower_push_pri_key
+- name: Registering private key with the Tower Server
+  vars:
+    # auth: "{{ auth }}"
+    # target: "{{ target }}"
+    payload_scm_credential:
+      name: "{{ key_name }}"
+      organization: "{{ organization.id }}"
+      # user: 1
+      # kind: scm
+      # username:
+      # ssh_key_unlock: echoechoecho
+      credential_type: 2 # type = SCM
+      inputs:
+          ssh_key_data: "{{ private_key }}"
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 201
+    url: "{{ target }}/api/v2/credentials/"
+    body_format: json
+    body: "{{ payload_scm_credential }}"
+    return_content: yes
+  register: cred_res
+
+- debug: var=cred_res
+
+- name: Parse response content`
+  set_fact:
+    scm_key_ref: "{{ cred_res.json }}"
+
+- debug: var=scm_key_ref

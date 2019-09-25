@@ -1,0 +1,27 @@
+---
+# tasks file for find_credential
+- name: Step 1 - Getting list of credentials
+  uri:
+    method: GET
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/credentials/?name={{ tmpl_cred_name | urlencode}}"
+    return_content: yes
+  register: Resposnse_credentials
+
+- name: Step 2 - iterate over list and find requested ID
+  set_fact:
+    cred_obj: "{{ cred }}"
+  when: cred.name == tmpl_cred_name and cred.organization == organization.id
+  loop: "{{ Resposnse_credentials.json.results }}"
+  loop_control:
+    loop_var: cred
+
+- name: Step 3 - Control step to make sure the id was found
+  fail:
+    msg: Credential "{{ tmpl_cred_name }}" could not be found
+  when: cred_obj is undefined
+
+- name: present matched credential
+  debug: var=cred_obj

@@ -1,0 +1,42 @@
+---
+# tasks file for tower_assign_scm_cred_to_project
+- name: Update the project with the key
+  debug: var=target_proj_obj
+
+- name: scm scm_key_ref
+  debug: var=scm_key_ref
+
+- name: updating project
+  vars:
+    proj_scm_cred: "{{ scm_key_ref.id }}"
+    proj_desc: "{{ target_proj_obj.description }}"
+    proj_scm_cache_to: "{{ target_proj_obj.scm_update_cache_timeout }}"
+    proj_scm_update_on_launch: "{{ target_proj_obj.scm_update_on_launch }}"
+    proj_scm_clean: "{{ target_proj_obj.scm_clean }}"
+    proj_scm_type: "{{ target_proj_obj.scm_type }}"
+    proj_scm_delete_on_update: "{{ target_proj_obj.scm_delete_on_update }}"
+    proj_scm_url: "{{ target_proj_obj.scm_url }}"
+    proj_scm_release: "{{ target_proj_obj.scm_branch }}"
+    proj_timeout: "{{ target_proj_obj.timeout }}"
+    proj_name: "{{ target_proj_obj.name }}"
+  uri:
+    method: PUT
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 200
+    url: "{{ target }}/api/v2/projects/{{ target_proj_obj.id }}/"
+    body_format: json
+    body: "{{ payload_project }}"
+    return_content: yes
+  register: proj_update_res
+
+- debug: var=proj_update_res
+
+- name: force update after assigning scm credential
+  uri:
+    method: POST
+    headers:
+      Authorization: "{{ auth }}"
+    status_code: 202
+    url: "{{ target }}/api/v2/projects/{{ target_proj_obj.id }}/update/"
+    return_content: yes
